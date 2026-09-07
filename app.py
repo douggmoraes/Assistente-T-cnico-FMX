@@ -2,67 +2,153 @@ import streamlit as st
 import pandas as pd
 import os
 
-st.set_page_config(page_title="Assistente Técnico FMX", layout="wide")
+# Configuração da página
+st.set_page_config(page_title="Assistente Técnico FMX", layout="wide", page_icon="🔧")
+
+# Estilização CSS com cores bem definidas e textos brancos de alto contraste
+st.markdown("""
+    <style>
+    .card-box {
+        background-color: #1e222a;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #4da6ff;
+        margin-bottom: 20px;
+        color: #ffffff !important;
+    }
+    .card-solucao {
+        background-color: #172b1d;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #28a745;
+        margin-bottom: 20px;
+        color: #ffffff !important;
+    }
+    .card-recon {
+        background-color: #2a2217;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #ffcc00;
+        margin-bottom: 20px;
+        color: #ffffff !important;
+    }
+    .card-display {
+        background-color: #2a1e17;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #ff9900;
+        margin-bottom: 20px;
+        color: #ffffff !important;
+    }
+    
+    .card-box p, .card-solucao p, .card-recon p, .card-display p,
+    .card-box span, .card-solucao span, .card-recon span, .card-display span {
+        color: #ffffff !important;
+        font-size: 16px !important;
+        line-height: 1.6 !important;
+    }
+    
+    .card-display code {
+        color: #ffcc00 !important;
+        font-size: 16px !important;
+        font-weight: bold;
+    }
+    .stTextInput > div > div > input {
+        font-size: 18px;
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 st.title("🔧 Assistente Técnico FMX")
-st.write("Sistema de Consulta de Falhas")
+st.caption("Sistema de Consulta Rápida de Falhas e Manutenção")
 
 excel_perfeito = 'Manual_Perfeito.xlsx'
 
-if os.path.exists(excel_perfeito):
-    # Lê a planilha com todas as falhas
-    df_falhas = pd.read_excel(excel_perfeito).fillna("")
+@st.cache_data
+def carregar_dados():
+    if os.path.exists(excel_perfeito):
+        return pd.read_excel(excel_perfeito).fillna("")
+    return None
 
-    codigo = st.text_input("Digite o código da falha", placeholder="Ex.: A1205").strip().upper()
+df_falhas = carregar_dados()
 
-    if st.button("Pesquisar"):
+if df_falhas is not None:
+    codigo = st.text_input("🔍 Digite o código da falha:", placeholder="Ex.: A1205 ou 1205").strip().upper()
+
+    if st.button("🔎 Pesquisar Falha", use_container_width=True, type="primary"):
         if codigo:
-            # Busca qualquer código na planilha inteira
             resultado = df_falhas[df_falhas['Código'].astype(str).str.strip().str.upper() == codigo]
 
             if not resultado.empty:
-                st.success("Código localizado")
+                st.toast("Falha localizada com sucesso!", icon="✅")
                 linha = resultado.iloc[0]
                 
-                # Função inteligente para limpar lixos visuais do Excel original
                 def limpar_texto(texto):
                     t = str(texto).strip()
-                    if t in ["...", "..", ".", "-", "mostrar", "Mostrar"]:
+                    if t in ["...", "..", ".", "-", "mostrar", "Mostrar", "nan", "NaN"]:
                         return ""
                     return t
 
-                col1, col2 = st.columns(2)
+                cod_exibido = limpar_texto(linha.iloc[0]) if limpar_texto(linha.iloc[0]) else codigo
+                desc_exibida = limpar_texto(linha.iloc[1]) if limpar_texto(linha.iloc[1]) else "Não informada"
+                causa_exibida = limpar_texto(linha.iloc[2]) if limpar_texto(linha.iloc[2]) else "Não informada"
+                recon_exibido = limpar_texto(linha.iloc[4]) if len(linha) > 4 and limpar_texto(linha.iloc[4]) else "Não informado"
+                solucao_exibida = limpar_texto(linha.iloc[5]) if len(linha) > 5 and limpar_texto(linha.iloc[5]) else ""
+                display_exibido = limpar_texto(linha.iloc[6]) if len(linha) > 6 and limpar_texto(linha.iloc[6]) else ""
 
-                with col1:
-                    st.subheader("Código")
-                    st.write(limpar_texto(linha.iloc[0]) if limpar_texto(linha.iloc[0]) else codigo)
+                st.divider()
 
-                    st.subheader("Descrição")
-                    st.write(limpar_texto(linha.iloc[1]) if limpar_texto(linha.iloc[1]) else "Não informada")
+                # 1. NÚMERO DA FALHA
+                st.subheader(f"📌 Nº da Falha: `{cod_exibido}`")
 
-                    st.subheader("Causa")
-                    st.write(limpar_texto(linha.iloc[2]) if limpar_texto(linha.iloc[2]) else "Não informada")
+                # 2. DESCRIÇÃO
+                st.markdown(f"""
+                <div class="card-box">
+                    <h4 style="color: #66b3ff; margin-top:0;">📋 Descrição</h4>
+                    <p>{desc_exibida}</p>
+                </div>
+                """, unsafe_allow_html=True)
 
-                with col2:
-                    st.subheader("Consequência")
-                    st.write(limpar_texto(linha.iloc[3]) if limpar_texto(linha.iloc[3]) else "Não informada")
+                # 3. CAUSA
+                st.markdown(f"""
+                <div class="card-box">
+                    <h4 style="color: #66b3ff; margin-top:0;">🧩 Causa</h4>
+                    <p>{causa_exibida}</p>
+                </div>
+                """, unsafe_allow_html=True)
 
-                    st.subheader("Reconhecimento")
-                    st.write(limpar_texto(linha.iloc[4]) if limpar_texto(linha.iloc[4]) else "Não informado")
+                # 4. RESPOSTA / SOLUÇÃO
+                if solucao_exibida:
+                    st.markdown(f"""
+                    <div class="card-solucao">
+                        <h4 style="color: #5cd65c; margin-top:0;">🛠️ Resposta / Solução</h4>
+                        <p>{solucao_exibida}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.info("ℹ️ **Resposta / Solução:** Sem solução específica cadastrada no manual para este código.")
 
-                    # FORÇA O TÍTULO FIXO "SOLUÇÃO" (Lê a 6ª coluna da sua planilha)
-                    st.subheader("Solução")
-                    texto_solucao = limpar_texto(linha.iloc[5]) if len(linha) > 5 else ""
-                    if not texto_solucao:
-                        st.write("Sem solução cadastrada para esta falha no Excel")
-                    else:
-                        st.write(texto_solucao)
+                # 5. RECONHECIMENTO
+                st.markdown(f"""
+                <div class="card-recon">
+                    <h4 style="color: #ffcc00; margin-top:0;">🔄 Reconhecimento / Reset</h4>
+                    <p>{recon_exibido}</p>
+                </div>
+                """, unsafe_allow_html=True)
 
-                    # FORÇA O TÍTULO FIXO "DISPLAY" (Lê a 7ª coluna da sua planilha)
-                    st.subheader("Display")
-                    texto_display = limpar_texto(linha.iloc[6]) if len(linha) > 6 else ""
-                    st.write(texto_display if texto_display else "Não informado")
+                # 6. DISPLAY
+                if display_exibido:
+                    st.markdown(f"""
+                    <div class="card-display">
+                        <h4 style="color: #ffb366; margin-top:0;">💻 Display / Mensagem IHM</h4>
+                        <p><code>{display_exibido}</code></p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
             else:
-                st.error(f"O código '{codigo}' não foi encontrado na planilha Manual_Perfeito.xlsx.")
+                st.error(f"❌ O código **'{codigo}'** não foi encontrado na base de dados do manual.")
+        else:
+            st.warning("⚠️ Por favor, digite um código de falha antes de pesquisar.")
 else:
-    st.error("Erro: O arquivo 'Manual_Perfeito.xlsx' não foi encontrado nesta pasta.")
+    st.error("🚨 Arquivo 'Manual_Perfeito.xlsx' não localizado na pasta do projeto.")
