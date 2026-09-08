@@ -1,6 +1,8 @@
-# 🔧 Assistente Técnico FMX
+# 🔧 Assistente Técnico 
+essa aplicaçao saiu da necessidade de consultar manuais de orientaçoes de falhas de equipamentos 
+nesse caso de manuais de empilhadeiras
 
-O **Assistente Técnico FMX** é uma aplicação web desenvolvida em Python e Streamlit para consulta rápida e diagnóstico de falhas técnicas com base em manuais operacionais (`Manual_Perfeito.xlsx`). 
+O **Assistente Técnico ** é uma aplicação web desenvolvida em Python e Streamlit para consulta rápida e diagnóstico de falhas técnicas com base em manuais operacionais (`Manual_Perfeito.xlsx`). 
 
 O sistema foi desenhado para proporcionar uma interface responsiva, de alto contraste e fácil leitura para técnicos em campo e operadores.
 
